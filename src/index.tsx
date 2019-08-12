@@ -2,7 +2,6 @@ import React from 'react';
 import ReactDOM from 'react-dom';
 import './index.css';
 import App from './App';
-import * as serviceWorker from './serviceWorker';
 
 import WasmProviderLite from './WasmProviderLite';
 import Api from '@polkadot/api/promise';
@@ -10,24 +9,40 @@ import Api from '@polkadot/api/promise';
 import { start_client, default as init } from './node_browser.js';
 import ws from './ws.js';
 
-// tslint-disable-next-line
-function log(msg: any) {
-  console.log(msg);
-}
+ReactDOM.render(<App />, document.getElementById('root'));
+
+// ---
 
 async function start() {
-  log('Loading WASM');
+  /* Load WASM */
+  console.log('Loading WASM');
   await init('./pkg/node_browser_bg.wasm');
-  log('Successfully loaded WASM');
+  console.log('Successfully loaded WASM');
 
-  // Build our client.
-  log('Starting client');
+  /* Build our client. */
+  console.log('Starting client');
   let client = start_client(ws());
-  log('Client started');
+  console.log('Client started');
 
+  /* A) Use the client directly */
+  client.rpcSubscribe('{"method":"chain_subscribeNewHead","params":[],"id":1,"jsonrpc":"2.0"}',
+    (r: any) => console.log("[client] New chain head: " + r));
+  client
+    .rpcSend('{"method":"system_networkState","params":[],"id":1,"jsonrpc":"2.0"}')
+    .then((r: any) => console.log("[client] Network state: " + r));
+
+  /* B) Or use a Provider wrapper around the client */
   const wasmProviderLite = new WasmProviderLite(client);
+  wasmProviderLite.send('system_networkState', []).then(r => {
+    console.log('[WasmProviderLite] system_networkState resolved with', r)
+  });
+  wasmProviderLite.subscribe('n/a', 'chain_subscribeNewHead', [], (err: any, r: any) => console.log("[WasmProviderLite] Subscription notification : new chain head: ", r));
 
-  Api.create({ provider: wasmProviderLite}).then((api: any) => {
+  /* C) Or use Api (typed responses) */
+  Api.create({ provider: wasmProviderLite }).then((api: any) => {
+
+    console.log('[Api] Runtime metadata', api.runtimeMetadata);
+
     api.rpc.chain.subscribeNewHead((header: any) => {
       console.log('[Api] Subscription message, new head', header.number.toNumber(), header);
     });
@@ -36,24 +51,6 @@ async function start() {
       console.log('[Api] Network state', state);
     })
   });
-
-
-
-  // Works:
-    // wasmProviderLite.send('system_networkState', []).then(re => {
-    //   console.log('[WasmProviderLite call] system_networkState resolved with',re)
-    // });
-    // wasmProviderLite.subscribe('n/a', 'chain_subscribeNewHead', [], (err: any, r: any) => console.log("[WasmProviderLite call] Subscription notification : new chain head: ", r));
-
-
-  // client.rpcSubscribe('{"method":"chain_subscribeNewHead","params":[],"id":1,"jsonrpc":"2.0"}',
-  //   (r: any) => log("[client] New chain head: " + r));
-
-  // setInterval(() => {
-  //   client
-  //     .rpcSend('{"method":"system_networkState","params":[],"id":1,"jsonrpc":"2.0"}')
-  //     .then((r: any) => log("[client] Network state: " + r));
-  // }, 4000);
 }
 
 start();
@@ -77,9 +74,3 @@ start();
 
 
 
-ReactDOM.render(<App />, document.getElementById('root'));
-
-// If you want your app to work offline and load faster, you can change
-// unregister() to register() below. Note this comes with some pitfalls.
-// Learn more about service workers: https://bit.ly/CRA-PWA
-serviceWorker.unregister();

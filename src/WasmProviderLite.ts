@@ -133,7 +133,6 @@ export default class WasmProviderLite implements ProviderInterface {
         l.debug((): string[] => ['calling', method, json]);
 
         this.client.rpcSend(json).then((response: any) => {
-          console.log('[wasmproviderlite.ts] json raw response is', response, typeof response);
           try {
             const result = this.coder.decodeResponse(JSON.parse(response));
             resolve(result);
