@@ -7,12 +7,6 @@ import * as serviceWorker from './serviceWorker';
 import WasmProviderLite from './WasmProviderLite';
 import Api from '@polkadot/api/promise';
 
-// Api.create({ provider: new WasmProvider()}).then((api: any) => {
-//   api.rpc.chain.subscribeNewHead((header: any) => {
-//   console.log(`new block #${header.number.toNumber()}`);
-//   })
-// });
-
 import { start_client, default as init } from './node_browser.js';
 import ws from './ws.js';
 
@@ -33,21 +27,23 @@ async function start() {
 
   const wasmProviderLite = new WasmProviderLite(client);
 
-  // Api.create({ provider: wasmProviderLite}).then((api: any) => {
-  //   console.log('[Api] ready!');
-  //   api.rpc.chain.subscribeNewHead((header: any) => {
-  //     console.log('[Api] Subscription message, new head', header);
-  //     console.log(`new block #${header.number.toNumber()}`);
-  //   })
-  // });
+  Api.create({ provider: wasmProviderLite}).then((api: any) => {
+    api.rpc.chain.subscribeNewHead((header: any) => {
+      console.log('[Api] Subscription message, new head', header.number.toNumber(), header);
+    });
+
+    api.rpc.system.networkState().then((state: any) => {
+      console.log('[Api] Network state', state);
+    })
+  });
 
 
 
   // Works:
-    wasmProviderLite.send('system_networkState', []).then(re => {
-      console.log('[WasmProviderLite call] system_networkState resolved with',re)
-    });
-    wasmProviderLite.subscribe('n/a', 'chain_subscribeNewHead', [], (err: any, r: any) => console.log("[WasmProviderLite call] Subscription notification : new chain head: ", r));
+    // wasmProviderLite.send('system_networkState', []).then(re => {
+    //   console.log('[WasmProviderLite call] system_networkState resolved with',re)
+    // });
+    // wasmProviderLite.subscribe('n/a', 'chain_subscribeNewHead', [], (err: any, r: any) => console.log("[WasmProviderLite call] Subscription notification : new chain head: ", r));
 
 
   // client.rpcSubscribe('{"method":"chain_subscribeNewHead","params":[],"id":1,"jsonrpc":"2.0"}',
