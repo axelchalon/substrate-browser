@@ -4,14 +4,70 @@ import './index.css';
 import App from './App';
 import * as serviceWorker from './serviceWorker';
 
-import {WsProvider} from '@polkadot/api';
+import WasmProviderLite from './WasmProviderLite';
 import Api from '@polkadot/api/promise';
 
-Api.create({ provider: new WsProvider('wss://substrate-rpc.parity.io/')}).then((api: any) => {
-  api.rpc.chain.subscribeNewHead((header: any) => {
-  console.log(`new block #${header.number.toNumber()}`);
-  })
-});
+// Api.create({ provider: new WasmProvider()}).then((api: any) => {
+//   api.rpc.chain.subscribeNewHead((header: any) => {
+//   console.log(`new block #${header.number.toNumber()}`);
+//   })
+// });
+
+import { start_client, default as init } from './node_browser.js';
+import ws from './ws.js';
+
+// tslint-disable-next-line
+function log(msg: any) {
+  console.log(msg);
+}
+
+async function start() {
+  log('Loading WASM');
+  await init('./pkg/node_browser_bg.wasm');
+  log('Successfully loaded WASM');
+
+  // Build our client.
+  log('Starting client');
+  let client = start_client(ws());
+  log('Client started');
+
+  Api.create({ provider: new WasmProviderLite(client)}).then((api: any) => {
+    console.log('Api created with WasmProviderLite');
+    api.rpc.chain.subscribeNewHead((header: any) => {
+      console.log(`new block #${header.number.toNumber()}`);
+    })
+  });
+
+  client.rpcSubscribe('{"method":"chain_subscribeNewHead","params":[],"id":1,"jsonrpc":"2.0"}',
+    (r: any) => log("New chain head: " + r));
+
+  setInterval(() => {
+    client
+      .rpcSend('{"method":"system_networkState","params":[],"id":1,"jsonrpc":"2.0"}')
+      .then((r: any) => log("Network state: " + r));
+  }, 4000);
+}
+
+start();
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 ReactDOM.render(<App />, document.getElementById('root'));
 
