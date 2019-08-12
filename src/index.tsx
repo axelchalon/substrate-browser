@@ -31,21 +31,30 @@ async function start() {
   let client = start_client(ws());
   log('Client started');
 
-  Api.create({ provider: new WasmProviderLite(client)}).then((api: any) => {
+  const wasmProviderLite = new WasmProviderLite(client);
+  Api.create({ provider: wasmProviderLite}).then((api: any) => {
     console.log('Api created with WasmProviderLite');
     api.rpc.chain.subscribeNewHead((header: any) => {
       console.log(`new block #${header.number.toNumber()}`);
     })
   });
 
-  client.rpcSubscribe('{"method":"chain_subscribeNewHead","params":[],"id":1,"jsonrpc":"2.0"}',
-    (r: any) => log("New chain head: " + r));
 
-  setInterval(() => {
-    client
-      .rpcSend('{"method":"system_networkState","params":[],"id":1,"jsonrpc":"2.0"}')
-      .then((r: any) => log("Network state: " + r));
-  }, 4000);
+
+  wasmProviderLite.send('system_networkState', []).then(re => {
+    console.log('[WasmProviderLite call] system_networkState resolved with',re)
+  });
+
+
+
+  // client.rpcSubscribe('{"method":"chain_subscribeNewHead","params":[],"id":1,"jsonrpc":"2.0"}',
+  //   (r: any) => log("[client] New chain head: " + r));
+
+  // setInterval(() => {
+  //   client
+  //     .rpcSend('{"method":"system_networkState","params":[],"id":1,"jsonrpc":"2.0"}')
+  //     .then((r: any) => log("[client] Network state: " + r));
+  // }, 4000);
 }
 
 start();

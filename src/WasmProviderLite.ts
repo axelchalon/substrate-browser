@@ -113,7 +113,7 @@ export default class WasmProviderLite implements ProviderInterface {
       l.debug((): string[] => ['calling', method, json]);
       this.client.rpcSubscribe(json,(response: any) => {
         try {
-          const result = this.coder.decodeResponse(response);
+          const result = this.coder.decodeResponse(JSON.parse(response));
           subscription.callback(null, result);
         } catch (error) {
           subscription.callback(error);
@@ -129,8 +129,9 @@ export default class WasmProviderLite implements ProviderInterface {
         l.debug((): string[] => ['calling', method, json]);
 
         this.client.rpcSend(json).then((response: any) => {
+          console.log('[wasmproviderlite.ts] json raw response is', response, typeof response);
           try {
-            const result = this.coder.decodeResponse(response);
+            const result = this.coder.decodeResponse(JSON.parse(response));
             resolve(result);
           } catch (error) {
             reject(error);
