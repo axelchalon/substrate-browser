@@ -97,7 +97,11 @@ export default class WasmProviderLite implements ProviderInterface {
    * @param  {ProviderInterfaceEmitCb}  sub  Callback
    */
   public on(type: ProviderInterfaceEmitted, sub: ProviderInterfaceEmitCb): void {
-    this._eventemitter.on(type, sub);
+    if (type == 'connected') { // should be handled by eventemitter but somehow doesn't work TODO
+      sub();
+    } else {
+      this._eventemitter.on(type, sub);
+    }
   }
 
   /**
@@ -166,7 +170,7 @@ export default class WasmProviderLite implements ProviderInterface {
    * })
    * ```
    */
-  public async subscribe(type: string, method: string, params: any[], callback: ProviderInterfaceCallback): Promise<number> {
+  public async subscribe(type: string, method: string, params: any[], callback: CallbackHandler): Promise<number> {
     const id = await this.send(method, params, { callback, type });
 
     return id as number;

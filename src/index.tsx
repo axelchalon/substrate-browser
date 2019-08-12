@@ -32,19 +32,22 @@ async function start() {
   log('Client started');
 
   const wasmProviderLite = new WasmProviderLite(client);
-  Api.create({ provider: wasmProviderLite}).then((api: any) => {
-    console.log('Api created with WasmProviderLite');
-    api.rpc.chain.subscribeNewHead((header: any) => {
-      console.log(`new block #${header.number.toNumber()}`);
-    })
-  });
+
+  // Api.create({ provider: wasmProviderLite}).then((api: any) => {
+  //   console.log('[Api] ready!');
+  //   api.rpc.chain.subscribeNewHead((header: any) => {
+  //     console.log('[Api] Subscription message, new head', header);
+  //     console.log(`new block #${header.number.toNumber()}`);
+  //   })
+  // });
 
 
 
-  wasmProviderLite.send('system_networkState', []).then(re => {
-    console.log('[WasmProviderLite call] system_networkState resolved with',re)
-  });
-
+  // Works:
+    wasmProviderLite.send('system_networkState', []).then(re => {
+      console.log('[WasmProviderLite call] system_networkState resolved with',re)
+    });
+    wasmProviderLite.subscribe('n/a', 'chain_subscribeNewHead', [], (err: any, r: any) => console.log("[WasmProviderLite call] Subscription notification : new chain head: ", r));
 
 
   // client.rpcSubscribe('{"method":"chain_subscribeNewHead","params":[],"id":1,"jsonrpc":"2.0"}',
